@@ -73,6 +73,13 @@ const PATTERNS: &[&str] = &[
     r"^curl\s+",
     r"^wget\s+",
     r"^(python3?\s+-m\s+)?mypy(\s|$)",
+    // Python tooling
+    r"^ruff\s+(check|format)",
+    r"^(python\s+-m\s+)?pytest(\s|$)",
+    r"^(pip3?|uv\s+pip)\s+(list|outdated|install)",
+    // Go tooling
+    r"^go\s+(test|build|vet)",
+    r"^golangci-lint(\s|$)",
 ];
 
 const RULES: &[RtkRule] = &[
@@ -263,6 +270,48 @@ const RULES: &[RtkRule] = &[
         rewrite_prefixes: &["python3 -m mypy", "python -m mypy", "mypy"],
         category: "Build",
         savings_pct: 80.0,
+        subcmd_savings: &[],
+        subcmd_status: &[],
+    },
+    // Python tooling
+    RtkRule {
+        rtk_cmd: "rtk ruff",
+        rewrite_prefixes: &["ruff"],
+        category: "Python",
+        savings_pct: 80.0,
+        subcmd_savings: &[("check", 80.0), ("format", 75.0)],
+        subcmd_status: &[],
+    },
+    RtkRule {
+        rtk_cmd: "rtk pytest",
+        rewrite_prefixes: &["python -m pytest", "pytest"],
+        category: "Python",
+        savings_pct: 90.0,
+        subcmd_savings: &[],
+        subcmd_status: &[],
+    },
+    RtkRule {
+        rtk_cmd: "rtk pip",
+        rewrite_prefixes: &["pip3", "pip", "uv pip"],
+        category: "Python",
+        savings_pct: 75.0,
+        subcmd_savings: &[("list", 75.0), ("outdated", 80.0)],
+        subcmd_status: &[],
+    },
+    // Go tooling
+    RtkRule {
+        rtk_cmd: "rtk go",
+        rewrite_prefixes: &["go"],
+        category: "Go",
+        savings_pct: 85.0,
+        subcmd_savings: &[("test", 90.0), ("build", 80.0), ("vet", 75.0)],
+        subcmd_status: &[],
+    },
+    RtkRule {
+        rtk_cmd: "rtk golangci-lint",
+        rewrite_prefixes: &["golangci-lint", "golangci"],
+        category: "Go",
+        savings_pct: 85.0,
         subcmd_savings: &[],
         subcmd_status: &[],
     },
