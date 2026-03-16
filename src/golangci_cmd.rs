@@ -78,12 +78,21 @@ pub fn run(args: &[String], verbose: u8) -> Result<()> {
         &filtered,
     );
 
-    // golangci-lint: exit 1 = lint issues found (expected), exit 2+ = tool/config error
-    let exit_code = output.status.code().unwrap_or(1);
-    if exit_code > 1 {
-        std::process::exit(exit_code);
+    // golangci-lint: exit 0 = clean, exit 1 = lint issues, exit 2+ = config/build error
+    // None = killed by signal (OOM, SIGKILL) — always fatal
+    match output.status.code() {
+        Some(0) | Some(1) => Ok(()),
+        Some(code) => {
+            if !stderr.trim().is_empty() {
+                eprintln!("{}", stderr.trim());
+            }
+            std::process::exit(code);
+        }
+        None => {
+            eprintln!("golangci-lint: killed by signal");
+            std::process::exit(130);
+        }
     }
-    Ok(())
 }
 
 /// Filter golangci-lint JSON output - group by linter and file

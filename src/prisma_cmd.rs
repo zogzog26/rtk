@@ -60,7 +60,12 @@ fn run_generate(args: &[String], verbose: u8) -> Result<()> {
     let raw = format!("{}\n{}", stdout, stderr);
 
     if !output.status.success() {
-        eprint!("{}", stderr);
+        if !stdout.trim().is_empty() {
+            eprint!("{}", stdout);
+        }
+        if !stderr.trim().is_empty() {
+            eprint!("{}", stderr);
+        }
         timer.track("prisma generate", "rtk prisma generate", &raw, &raw);
         std::process::exit(exit_code);
     }
@@ -112,7 +117,12 @@ fn run_migrate(subcommand: MigrateSubcommand, args: &[String], verbose: u8) -> R
     let raw = format!("{}\n{}", stdout, stderr);
 
     if !output.status.success() {
-        eprint!("{}", stderr);
+        if !stdout.trim().is_empty() {
+            eprint!("{}", stdout);
+        }
+        if !stderr.trim().is_empty() {
+            eprint!("{}", stderr);
+        }
         timer.track(cmd_name, &format!("rtk {}", cmd_name), &raw, &raw);
         std::process::exit(exit_code);
     }
@@ -151,7 +161,12 @@ fn run_db_push(args: &[String], verbose: u8) -> Result<()> {
     let raw = format!("{}\n{}", stdout, stderr);
 
     if !output.status.success() {
-        eprint!("{}", stderr);
+        if !stdout.trim().is_empty() {
+            eprint!("{}", stdout);
+        }
+        if !stderr.trim().is_empty() {
+            eprint!("{}", stderr);
+        }
         timer.track("prisma db push", "rtk prisma db push", &raw, &raw);
         std::process::exit(exit_code);
     }

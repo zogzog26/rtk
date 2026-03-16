@@ -45,6 +45,7 @@ fn docker_ps(_verbose: u8) -> Result<()> {
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         eprint!("{}", stderr);
+        timer.track("docker ps", "rtk docker ps", &raw, &raw);
         std::process::exit(output.status.code().unwrap_or(1));
     }
 
@@ -104,6 +105,7 @@ fn docker_images(_verbose: u8) -> Result<()> {
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         eprint!("{}", stderr);
+        timer.track("docker images", "rtk docker images", &raw, &raw);
         std::process::exit(output.status.code().unwrap_or(1));
     }
 
