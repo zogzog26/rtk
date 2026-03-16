@@ -1,3 +1,4 @@
+use crate::config;
 use crate::tracking;
 use crate::utils::{resolved_command, truncate};
 use anyhow::{Context, Result};
@@ -121,7 +122,7 @@ pub fn filter_ruff_check_json(output: &str) -> String {
             return format!(
                 "Ruff check (JSON parse failed: {})\n{}",
                 e,
-                truncate(output, 500)
+                truncate(output, config::limits().passthrough_max_chars)
             );
         }
     };

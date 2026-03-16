@@ -1,3 +1,4 @@
+use crate::config;
 use crate::tracking;
 use crate::utils::{resolved_command, truncate};
 use anyhow::{Context, Result};
@@ -106,7 +107,7 @@ fn filter_golangci_json(output: &str) -> String {
             return format!(
                 "golangci-lint (JSON parse failed: {})\n{}",
                 e,
-                truncate(output, 500)
+                truncate(output, config::limits().passthrough_max_chars)
             );
         }
     };

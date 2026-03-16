@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::ffi::OsString;
 
 use crate::parser::{
-    emit_degradation_warning, emit_passthrough_warning, truncate_output, Dependency,
+    emit_degradation_warning, emit_passthrough_warning, truncate_passthrough, Dependency,
     DependencyState, FormatMode, OutputParser, ParseResult, TokenFormatter,
 };
 
@@ -75,7 +75,7 @@ impl OutputParser for PnpmListParser {
                     }
                     None => {
                         // Tier 3: Passthrough
-                        ParseResult::Passthrough(truncate_output(input, 500))
+                        ParseResult::Passthrough(truncate_passthrough(input))
                     }
                 }
             }
@@ -202,7 +202,7 @@ impl OutputParser for PnpmOutdatedParser {
                     }
                     None => {
                         // Tier 3: Passthrough
-                        ParseResult::Passthrough(truncate_output(input, 500))
+                        ParseResult::Passthrough(truncate_passthrough(input))
                     }
                 }
             }
