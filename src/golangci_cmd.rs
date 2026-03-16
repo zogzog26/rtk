@@ -78,8 +78,11 @@ pub fn run(args: &[String], verbose: u8) -> Result<()> {
         &filtered,
     );
 
-    // golangci-lint returns exit code 1 when issues found (expected behavior)
-    // Don't exit with error code in that case
+    // golangci-lint: exit 1 = lint issues found (expected), exit 2+ = tool/config error
+    let exit_code = output.status.code().unwrap_or(1);
+    if exit_code > 1 {
+        std::process::exit(exit_code);
+    }
     Ok(())
 }
 
