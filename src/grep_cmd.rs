@@ -5,6 +5,7 @@ use anyhow::{Context, Result};
 use regex::Regex;
 use std::collections::HashMap;
 
+#[allow(clippy::too_many_arguments)]
 pub fn run(
     pattern: &str,
     path: &str,

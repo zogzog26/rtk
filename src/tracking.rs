@@ -221,6 +221,9 @@ pub struct MonthStats {
     pub avg_time_ms: u64,
 }
 
+/// Type alias for command statistics tuple: (command, count, saved_tokens, avg_savings_pct, avg_time_ms)
+type CommandStats = (String, usize, usize, f64, u64);
+
 impl Tracker {
     /// Create a new tracker instance.
     ///
@@ -494,6 +497,7 @@ impl Tracker {
     ///     summary.total_saved, summary.avg_savings_pct);
     /// # Ok::<(), anyhow::Error>(())
     /// ```
+    #[allow(dead_code)]
     pub fn get_summary(&self) -> Result<GainSummary> {
         self.get_summary_filtered(None) // delegate to filtered variant
     }
@@ -566,7 +570,7 @@ impl Tracker {
     fn get_by_command(
         &self,
         project_path: Option<&str>, // added
-    ) -> Result<Vec<(String, usize, usize, f64, u64)>> {
+    ) -> Result<Vec<CommandStats>> {
         let (project_exact, project_glob) = project_filter_params(project_path); // added
         let mut stmt = self.conn.prepare(
             "SELECT rtk_cmd, COUNT(*), SUM(saved_tokens), AVG(savings_pct), AVG(exec_time_ms)
@@ -857,6 +861,7 @@ impl Tracker {
     /// }
     /// # Ok::<(), anyhow::Error>(())
     /// ```
+    #[allow(dead_code)]
     pub fn get_recent(&self, limit: usize) -> Result<Vec<CommandRecord>> {
         self.get_recent_filtered(limit, None) // delegate to filtered variant
     }
@@ -977,6 +982,7 @@ fn get_db_path() -> Result<PathBuf> {
 pub struct ParseFailureRecord {
     pub timestamp: String,
     pub raw_command: String,
+    #[allow(dead_code)]
     pub error_message: String,
     pub fallback_succeeded: bool,
 }
@@ -1181,6 +1187,7 @@ pub fn args_display(args: &[OsString]) -> String {
 /// timer.track("ls -la", "rtk ls", "input", "output");
 /// ```
 #[deprecated(note = "Use TimedExecution instead")]
+#[allow(dead_code)]
 pub fn track(original_cmd: &str, rtk_cmd: &str, input: &str, output: &str) {
     let input_tokens = estimate_tokens(input);
     let output_tokens = estimate_tokens(output);
