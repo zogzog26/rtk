@@ -300,11 +300,11 @@ SHARED            utils.rs          Helpers                N/A        ✓
 
 <<<<<<< HEAD
 <<<<<<< HEAD
-**Total: 67 modules** (44 command modules + 23 infrastructure modules)
+**Total: 71 modules** (49 command modules + 22 infrastructure modules)
 
 ### Module Count Breakdown
 
-- **Command Modules**: 34 (directly exposed to users)
+- **Command Modules**: 49 (directly exposed to users)
 - **Infrastructure Modules**: 20 (utils, filter, tracking, tee, config, init, gain, toml_filter, verify_cmd, etc.)
 =======
 **Total: 71 modules** (49 command modules + 22 infrastructure modules)
