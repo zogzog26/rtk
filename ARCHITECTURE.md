@@ -294,12 +294,21 @@ SHARED            utils.rs          Helpers                N/A        ✓
                   tee.rs            Full output recovery   N/A        ✓
 ```
 
+<<<<<<< HEAD
 **Total: 67 modules** (44 command modules + 23 infrastructure modules)
 
 ### Module Count Breakdown
 
 - **Command Modules**: 34 (directly exposed to users)
 - **Infrastructure Modules**: 20 (utils, filter, tracking, tee, config, init, gain, toml_filter, verify_cmd, etc.)
+=======
+**Total: 71 modules** (49 command modules + 22 infrastructure modules)
+
+### Module Count Breakdown
+
+- **Command Modules**: 49 (directly exposed to users)
+- **Infrastructure Modules**: 22 (utils, filter, tracking, tee, config, init, gain, toml_filter, verify_cmd, trust, etc.)
+>>>>>>> ef9b45f (docs(architecture): update module count to 71 (49 command + 22 infra))
 - **Git Commands**: 7 operations (status, diff, log, add, commit, push, branch/checkout)
 - **JS/TS Tooling**: 8 modules (modern frontend/fullstack development)
 - **Python Tooling**: 3 modules (ruff, pytest, pip)
