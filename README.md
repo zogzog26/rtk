@@ -102,7 +102,7 @@ rtk gain        # Should show token savings stats
 # 1. Install hook for Claude Code (recommended)
 rtk init --global
 # Follow instructions to register in ~/.claude/settings.json
-# Claude Code only by default (use --opencode for OpenCode)
+# Claude Code only by default (use --opencode for OpenCode, --gemini for Gemini CLI)
 
 # 2. Restart Claude Code, then test
 git status  # Automatically rewritten to rtk git status
@@ -171,6 +171,8 @@ rtk playwright test             # E2E results (failures only)
 rtk pytest                      # Python tests (-90%)
 rtk go test                     # Go tests (NDJSON, -90%)
 rtk cargo test                  # Cargo tests (-90%)
+rtk rake test                   # Ruby minitest (-90%)
+rtk rspec                       # RSpec tests (JSON, -60%+)
 ```
 
 ### Build & Lint
@@ -184,6 +186,7 @@ rtk cargo build                 # Cargo build (-80%)
 rtk cargo clippy                # Cargo clippy (-80%)
 rtk ruff check                  # Python linting (JSON, -80%)
 rtk golangci-lint run           # Go linting (JSON, -85%)
+rtk rubocop                     # Ruby linting (JSON, -60%+)
 ```
 
 ### Package Managers
@@ -191,6 +194,7 @@ rtk golangci-lint run           # Go linting (JSON, -85%)
 rtk pnpm list                   # Compact dependency tree
 rtk pip list                    # Python packages (auto-detect uv)
 rtk pip outdated                # Outdated packages
+rtk bundle install              # Ruby gems (strip Using lines)
 rtk prisma generate             # Schema generation (no ASCII art)
 ```
 
@@ -287,6 +291,27 @@ rtk init --show             # Verify installation
 
 After install, **restart Claude Code**.
 
+## Gemini CLI Support (Global)
+
+RTK supports Gemini CLI via a native Rust hook processor. The hook intercepts `run_shell_command` tool calls and rewrites them to `rtk` equivalents using the same rewrite engine as Claude Code.
+
+**Install Gemini hook:**
+```bash
+rtk init -g --gemini
+```
+
+**What it creates:**
+- `~/.gemini/hooks/rtk-hook-gemini.sh` (thin wrapper calling `rtk hook gemini`)
+- `~/.gemini/GEMINI.md` (RTK awareness instructions)
+- Patches `~/.gemini/settings.json` with BeforeTool hook
+
+**Uninstall:**
+```bash
+rtk init -g --gemini --uninstall
+```
+
+**Restart Required**: Restart Gemini CLI, then test with `git status` in a session.
+
 ## OpenCode Plugin (Global)
 
 OpenCode supports plugins that can intercept tool execution. RTK provides a global plugin that mirrors the Claude auto-rewrite behavior by rewriting Bash tool commands to `rtk ...` before they execute. This plugin is **not** installed by default.
@@ -330,6 +355,10 @@ cp hooks/opencode-rtk.ts ~/.config/opencode/plugins/rtk.ts
 | `pip list/install` | `rtk pip ...` |
 | `go test/build/vet` | `rtk go ...` |
 | `golangci-lint` | `rtk golangci-lint` |
+| `rake test` / `rails test` | `rtk rake test` |
+| `rspec` / `bundle exec rspec` | `rtk rspec` |
+| `rubocop` / `bundle exec rubocop` | `rtk rubocop` |
+| `bundle install/update` | `rtk bundle ...` |
 | `docker ps/images/logs` | `rtk docker ...` |
 | `kubectl get/logs` | `rtk kubectl ...` |
 | `curl` | `rtk curl` |
