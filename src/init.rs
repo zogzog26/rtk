@@ -15,6 +15,9 @@ const CURSOR_REWRITE_HOOK: &str = include_str!("../hooks/cursor-rtk-rewrite.sh")
 // Embedded Pi-mono extension (TypeScript)
 const PI_MONO_REWRITE: &str = include_str!("../hooks/pi-rtk-rewrite.ts");
 
+// Embedded Pi-mono RTK rules (for AGENTS.md context)
+const PI_MONO_RULES: &str = include_str!("../hooks/pi-rtk-rules.md");
+
 // Embedded OpenCode plugin (auto-rewrite)
 const OPENCODE_PLUGIN: &str = include_str!("../hooks/opencode-rtk.ts");
 
@@ -1841,11 +1844,16 @@ fn install_pi_mono_hooks(verbose: u8) -> Result<()> {
     let extension_path = extensions_dir.join("rtk.ts");
     let changed = write_if_changed(&extension_path, PI_MONO_REWRITE, "Pi-mono extension", verbose)?;
 
+    // Also write the RTK rules for context (similar to CLAUDE.md for Claude Code)
+    let rules_path = pi_mono_dir.join("RTK.md");
+    let rules_changed = write_if_changed(&rules_path, PI_MONO_RULES, "Pi-mono RTK rules", verbose)?;
+
     // Report
-    let status = if changed { "installed/updated" } else { "already up to date" };
+    let status = if changed || rules_changed { "installed/updated" } else { "already up to date" };
     println!("\nPi-mono RTK extension {} (global).\n", status);
     println!("  Extension: {}", extension_path.display());
-    println!("  Pi will automatically detect the extension. Test with: pi -e {}\n", extension_path.display());
+    println!("  Rules:     {}", rules_path.display());
+    println!("\nPi will automatically detect the extension. Add 'RTK.md' to your project or AGENTS.md for context.\n");
 
     Ok(())
 }
@@ -1863,6 +1871,17 @@ fn remove_pi_mono_hooks(verbose: u8) -> Result<Vec<String>> {
         removed.push(extension_path.display().to_string());
         if verbose > 0 {
             eprintln!("Removed Pi-mono extension: {}", extension_path.display());
+        }
+    }
+
+    // Also remove the RTK rules file
+    let rules_path = pi_mono_dir.join("RTK.md");
+    if rules_path.exists() {
+        fs::remove_file(&rules_path)
+            .with_context(|| format!("Failed to remove Pi-mono RTK rules: {}", rules_path.display()))?;
+        removed.push(rules_path.display().to_string());
+        if verbose > 0 {
+            eprintln!("Removed Pi-mono RTK rules: {}", rules_path.display());
         }
     }
 
