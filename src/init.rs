@@ -12,6 +12,9 @@ const REWRITE_HOOK: &str = include_str!("../hooks/rtk-rewrite.sh");
 // Embedded Cursor hook script (preToolUse format)
 const CURSOR_REWRITE_HOOK: &str = include_str!("../hooks/cursor-rtk-rewrite.sh");
 
+// Embedded Pi hook script (preToolUse format)
+const PI_REWRITE_HOOK: &str = include_str!("../hooks/pi-rtk-rewrite.sh");
+
 // Embedded OpenCode plugin (auto-rewrite)
 const OPENCODE_PLUGIN: &str = include_str!("../hooks/opencode-rtk.ts");
 
@@ -212,6 +215,7 @@ pub fn run(
     install_cursor: bool,
     install_windsurf: bool,
     install_cline: bool,
+    install_pi: bool,
     claude_md: bool,
     hook_only: bool,
     codex: bool,
@@ -277,6 +281,11 @@ pub fn run(
     // Cursor hooks (additive, installed alongside Claude Code)
     if install_cursor {
         install_cursor_hooks(verbose)?;
+    }
+
+    // Pi hooks (additive, installed alongside Claude Code)
+    if install_pi {
+        install_pi_hooks(verbose)?;
     }
 
     Ok(())
@@ -515,8 +524,15 @@ fn remove_hook_from_settings(verbose: u8) -> Result<bool> {
     Ok(removed)
 }
 
-/// Full uninstall for Claude, Gemini, Codex, or Cursor artifacts.
-pub fn uninstall(global: bool, gemini: bool, codex: bool, cursor: bool, verbose: u8) -> Result<()> {
+/// Full uninstall for Claude, Gemini, Codex, Cursor, or Pi artifacts.
+pub fn uninstall(
+    global: bool,
+    gemini: bool,
+    codex: bool,
+    cursor: bool,
+    pi: bool,
+    verbose: u8,
+) -> Result<()> {
     if codex {
         return uninstall_codex(global, verbose);
     }
@@ -535,6 +551,23 @@ pub fn uninstall(global: bool, gemini: bool, codex: bool, cursor: bool, verbose:
             println!("\nRestart Cursor to apply changes.");
         } else {
             println!("RTK Cursor support was not installed (nothing to remove)");
+        }
+        return Ok(());
+    }
+
+    if pi {
+        if !global {
+            anyhow::bail!("Pi uninstall only works with --global flag");
+        }
+        let pi_removed = remove_pi_hooks(verbose).context("Failed to remove Pi hooks")?;
+        if !pi_removed.is_empty() {
+            println!("RTK uninstalled (Pi):");
+            for item in &pi_removed {
+                println!("  - {}", item);
+            }
+            println!("\nRestart Pi to apply changes.");
+        } else {
+            println!("RTK Pi support was not installed (nothing to remove)");
         }
         return Ok(());
     }
@@ -1789,6 +1822,83 @@ fn remove_cursor_hook_from_json(root: &mut serde_json::Value) -> bool {
     pre_tool_use.len() < original_len
 }
 
+// ─── Pi Agent support ─────────────────────────────────────────────
+
+/// Resolve ~/.omp directory
+fn resolve_pi_dir() -> Result<PathBuf> {
+    dirs::home_dir()
+        .map(|h| h.join(".omp"))
+        .context("Cannot determine home directory. Is $HOME set?")
+}
+
+/// Install Pi hooks: hook script
+fn install_pi_hooks(verbose: u8) -> Result<()> {
+    let pi_dir = resolve_pi_dir()?;
+    let hooks_dir = pi_dir.join("hooks");
+    fs::create_dir_all(&hooks_dir).with_context(|| {
+        format!(
+            "Failed to create Pi hooks directory: {}",
+            hooks_dir.display()
+        )
+    })?;
+
+    // 1. Write hook script
+    let hook_path = hooks_dir.join("rtk-rewrite.sh");
+    let hook_changed = write_if_changed(&hook_path, PI_REWRITE_HOOK, "Pi hook", verbose)?;
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(&hook_path, fs::Permissions::from_mode(0o755)).with_context(|| {
+            format!("Failed to set Pi hook permissions: {}", hook_path.display())
+        })?;
+    }
+
+    // Report
+    let hook_status = if hook_changed {
+        "installed/updated"
+    } else {
+        "already up to date"
+    };
+    println!("\nPi hook {} (global).\n", hook_status);
+    println!("  Hook: {}", hook_path.display());
+    println!("  Pi will automatically detect the hook. Test with: git status\n");
+
+    Ok(())
+}
+
+/// Remove Pi hooks
+fn remove_pi_hooks(verbose: u8) -> Result<Vec<String>> {
+    let pi_dir = resolve_pi_dir()?;
+    let hooks_dir = pi_dir.join("hooks");
+    let hook_path = hooks_dir.join("rtk-rewrite.sh");
+
+    let mut removed = Vec::new();
+
+    if hook_path.exists() {
+        fs::remove_file(&hook_path)
+            .with_context(|| format!("Failed to remove Pi hook: {}", hook_path.display()))?;
+        removed.push(hook_path.display().to_string());
+        if verbose > 0 {
+            eprintln!("Removed Pi hook: {}", hook_path.display());
+        }
+    }
+
+    // Remove hooks directory if empty
+    if hooks_dir.exists() {
+        if let Ok(mut entries) = fs::read_dir(&hooks_dir) {
+            if entries.next().is_none() {
+                fs::remove_dir(&hooks_dir).ok();
+                if verbose > 0 {
+                    eprintln!("Removed empty Pi hooks directory: {}", hooks_dir.display());
+                }
+            }
+        }
+    }
+
+    Ok(removed)
+}
+
 /// Show current rtk configuration
 pub fn show_config(codex: bool) -> Result<()> {
     if codex {
@@ -2531,6 +2641,7 @@ More notes
             false,
             false,
             false,
+            false,
             true,
             PatchMode::Auto,
             0,
@@ -2545,6 +2656,7 @@ More notes
     #[test]
     fn test_codex_mode_rejects_no_patch() {
         let err = run(
+            false,
             false,
             false,
             false,
