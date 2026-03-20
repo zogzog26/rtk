@@ -12,6 +12,9 @@ const REWRITE_HOOK: &str = include_str!("../hooks/rtk-rewrite.sh");
 // Embedded Cursor hook script (preToolUse format)
 const CURSOR_REWRITE_HOOK: &str = include_str!("../hooks/cursor-rtk-rewrite.sh");
 
+// Embedded Pi-mono extension (TypeScript)
+const PI_MONO_REWRITE: &str = include_str!("../hooks/pi-rtk-rewrite.ts");
+
 // Embedded OpenCode plugin (auto-rewrite)
 const OPENCODE_PLUGIN: &str = include_str!("../hooks/opencode-rtk.ts");
 
@@ -212,6 +215,7 @@ pub fn run(
     install_cursor: bool,
     install_windsurf: bool,
     install_cline: bool,
+    install_pi_mono: bool,
     claude_md: bool,
     hook_only: bool,
     codex: bool,
@@ -277,6 +281,11 @@ pub fn run(
     // Cursor hooks (additive, installed alongside Claude Code)
     if install_cursor {
         install_cursor_hooks(verbose)?;
+    }
+
+    // Pi-mono hooks (badlogic/pi-mono)
+    if install_pi_mono {
+        install_pi_mono_hooks(verbose)?;
     }
 
     Ok(())
@@ -515,8 +524,8 @@ fn remove_hook_from_settings(verbose: u8) -> Result<bool> {
     Ok(removed)
 }
 
-/// Full uninstall for Claude, Gemini, Codex, or Cursor artifacts.
-pub fn uninstall(global: bool, gemini: bool, codex: bool, cursor: bool, verbose: u8) -> Result<()> {
+/// Full uninstall for Claude, Gemini, Codex, Cursor, or Pi-mono artifacts.
+pub fn uninstall(global: bool, gemini: bool, codex: bool, cursor: bool, pi_mono: bool, verbose: u8) -> Result<()> {
     if codex {
         return uninstall_codex(global, verbose);
     }
@@ -535,6 +544,24 @@ pub fn uninstall(global: bool, gemini: bool, codex: bool, cursor: bool, verbose:
             println!("\nRestart Cursor to apply changes.");
         } else {
             println!("RTK Cursor support was not installed (nothing to remove)");
+        }
+        return Ok(());
+    }
+
+    if pi_mono {
+        if !global {
+            anyhow::bail!("Pi-mono uninstall only works with --global flag");
+        }
+        let pi_mono_removed =
+            remove_pi_mono_hooks(verbose).context("Failed to remove Pi-mono hooks")?;
+        if !pi_mono_removed.is_empty() {
+            println!("RTK uninstalled (Pi-mono):");
+            for item in &pi_mono_removed {
+                println!("  - {}", item);
+            }
+            println!("\nRestart Pi to apply changes.");
+        } else {
+            println!("RTK Pi-mono support was not installed (nothing to remove)");
         }
         return Ok(());
     }
@@ -1787,6 +1814,59 @@ fn remove_cursor_hook_from_json(root: &mut serde_json::Value) -> bool {
     });
 
     pre_tool_use.len() < original_len
+}
+
+// ─── badlogic/pi-mono Agent support ─────────────────────────────────────────
+
+/// Resolve ~/.pi/agent directory for badlogic/pi-mono
+fn resolve_pi_mono_dir() -> Result<PathBuf> {
+    dirs::home_dir()
+        .map(|h| h.join(".pi").join("agent"))
+        .context("Cannot determine home directory. Is $HOME set?")
+}
+
+/// Install RTK extension for badlogic/pi-mono
+fn install_pi_mono_hooks(verbose: u8) -> Result<()> {
+    let pi_mono_dir = resolve_pi_mono_dir()?;
+    let extensions_dir = pi_mono_dir.join("extensions");
+
+    fs::create_dir_all(&extensions_dir).with_context(|| {
+        format!(
+            "Failed to create Pi-mono extensions directory: {}",
+            extensions_dir.display()
+        )
+    })?;
+
+    // Write the TypeScript extension
+    let extension_path = extensions_dir.join("rtk.ts");
+    let changed = write_if_changed(&extension_path, PI_MONO_REWRITE, "Pi-mono extension", verbose)?;
+
+    // Report
+    let status = if changed { "installed/updated" } else { "already up to date" };
+    println!("\nPi-mono RTK extension {} (global).\n", status);
+    println!("  Extension: {}", extension_path.display());
+    println!("  Pi will automatically detect the extension. Test with: pi -e {}\n", extension_path.display());
+
+    Ok(())
+}
+
+/// Remove RTK extension from badlogic/pi-mono
+fn remove_pi_mono_hooks(verbose: u8) -> Result<Vec<String>> {
+    let pi_mono_dir = resolve_pi_mono_dir()?;
+    let extension_path = pi_mono_dir.join("extensions").join("rtk.ts");
+
+    let mut removed = Vec::new();
+
+    if extension_path.exists() {
+        fs::remove_file(&extension_path)
+            .with_context(|| format!("Failed to remove Pi-mono extension: {}", extension_path.display()))?;
+        removed.push(extension_path.display().to_string());
+        if verbose > 0 {
+            eprintln!("Removed Pi-mono extension: {}", extension_path.display());
+        }
+    }
+
+    Ok(removed)
 }
 
 /// Show current rtk configuration
